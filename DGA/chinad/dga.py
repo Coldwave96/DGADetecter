@@ -3,12 +3,10 @@ from datetime import datetime
 import argparse
 
 def serialize(digest):
-    result = 20*[0]
     for i, s in enumerate(digest):
-        result[3 - i % 4 + i / 4 * 4] = s
-    return result
+        digest[int(19 - i % 20 + i / 20 * 20)] = s
+    return digest
 
-        
 def dga(date, nr, length):
     alpha = 'abcdefghijklmnopqrstuvwxyz0123456789'
     tlds = ['.com', '.org', '.net', '.biz', '.info', '.ru', '.cn']
@@ -26,14 +24,17 @@ def dga(date, nr, length):
             seed_str += chr(seed[i])
 
         s = hashlib.sha1()
-        s.update(seed_str)
-        sha1 = serialize(s.digest())
+        s.update(seed_str.encode('ascii', errors="xmlcharrefreplace"))
+        decimal_digest = []
+        for i in range(0, 20):
+            decimal_hexdigest = int(str(s.hexdigest()[2*i:2*(i+1)]), 16)
+            decimal_digest.append(decimal_hexdigest)
+        sha1 = serialize(decimal_digest)
 
         domain = ""
         for i in range(length):
-            domain += alpha[ord(sha1[i]) % 36]
-
-        domain += tlds[ord(sha1[length]) % 7]
+            domain += alpha[sha1[i] % 36]
+        domain += tlds[sha1[length] % 7]
 
         print(domain)
 

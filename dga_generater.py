@@ -1,7 +1,8 @@
-import subprocess
-import datetime
+import os
 import random
+import datetime
 import argparse
+import subprocess
 
 parser = argparse.ArgumentParser(description="DGA Domain Generater")
 
@@ -25,12 +26,12 @@ seconds = subprocess.check_output(time_command, shell=True).decode('utf-8').stri
 # shiotob: domain + version
 # suppobox: word_list(file) + time(%Y-%m-%d %H:%M:%S)
 for name in family_names:
-    command = 'python3 ./DGA/' + name + '/dga.py '
-    output_dir = './Datasets/Malicious/' + name + '/example.txt'
+    command = 'python3 DGA/' + name + '/dga.py '
+    output_dir = 'Datasets/Malicious/' + name + '/example.txt'
     match name:
         case 'chinad':
-            command += '--time ' + str(seconds) + ' --nr ' + str(nr) + ' --len ' + str(random.randint(0, 19))
-            command += ' >> ' + output_dir
-            print(command)
+            command += '--time ' + str(seconds) + ' --nr ' + str(nr) + ' --len ' + str(random.randint(10, 19))
+            command += ' > ' + output_dir
+            os.system(command)
         case _:
             command = ''
