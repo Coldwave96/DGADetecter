@@ -1,3 +1,5 @@
+import subprocess
+import datetime
 import random
 import argparse
 
@@ -10,6 +12,11 @@ parser.add_argument('-n', '--name', type=str, default=default_name,
 args = parser.parse_args()
 family_names = args.name.split(',')
 
+nr = 1000
+time_now = datetime.datetime.now()
+time_command = "date +%s -d " + '\"' + str(time_now) + '\"'
+seconds = subprocess.check_output(time_command, shell=True).decode('utf-8').strip()
+
 # bigviktor,ccleaner,vidro,xshellghost: time + nr
 # chinad: time + nr + lenth_of_SLD
 # enviserv: seed(string) + nr + TLDs
@@ -17,14 +24,12 @@ family_names = args.name.split(',')
 # padcrypt: date(%Y-%m-%d) + version
 # shiotob: domain + version
 # suppobox: word_list(file) + time(%Y-%m-%d %H:%M:%S)
-
-nr = '1000'
 for name in family_names:
     command = 'python3 ./DGA/' + name + '/dga.py '
     output_dir = './Datasets/Malicious/' + name + '/example.txt'
     match name:
         case 'chinad':
-            command += '--time ' + str(random.randint(0, 1000000)) + ' --nr ' + nr + ' --len ' + str(random.randint(0, 20))
+            command += '--time ' + str(seconds) + ' --nr ' + str(nr) + ' --len ' + str(random.randint(0, 19))
             command += ' >> ' + output_dir
             print(command)
         case _:
