@@ -25,7 +25,7 @@ def dga(date, seed, nr, tlds):
         tld = ''
         m = _seed
         for j in range(len_sld):
-            idx = m % len_sld
+            idx = int(m % len_sld)
             sld += _sld[idx]
             if j == 0:
                 if idx < 7:

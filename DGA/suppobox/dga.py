@@ -14,7 +14,7 @@ from datetime import datetime
 import argparse
 
 def generate_domains(time_, word_list):
-    with open("words{}.txt".format(word_list), "r") as r:
+    with open("DGA/suppobox/words{}.txt".format(word_list), "r") as r:
         words = [w.strip() for w in r.readlines()]
 
     if not time_:
