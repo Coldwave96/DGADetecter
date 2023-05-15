@@ -71,7 +71,7 @@ for name in family_names:
         case _:
             command += '--time ' + str(seconds) + ' --nr ' + str(nr)
             commands.append(command)
-    print("Generating DGA family {}".format(name))
+    print("[*]Generating DGA family {}".format(name))
     for index, command in enumerate(commands):
         if index > 0:
             command += ' >> ' + output_dir
