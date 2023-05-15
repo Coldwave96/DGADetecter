@@ -2,6 +2,7 @@
     DGA of CCleaner
 '''
 
+import random
 import argparse
 from datetime import datetime
 
@@ -11,16 +12,18 @@ def msvcrt_rand(seed):
     return randval, new_seed
 
 def dga(year, month, nr, tlds):
+    for _ in range(nr):
+        year = random.randint(1970, year)
+        month = random.randint(1, 12)
 
-    r1, seed = msvcrt_rand(year * 10000 + month)
-    r2, seed = msvcrt_rand(seed)
-    r3, seed = msvcrt_rand(seed)
-    
+        r1, seed = msvcrt_rand(year * 10000 + month)
+        r2, seed = msvcrt_rand(seed)
+        r3, seed = msvcrt_rand(seed)       
 
-    sld = 'ab%x%x' %(r2 * r3, r1)
+        sld = 'ab%x%x' %(r2 * r3, r1)
 
-    domain = sld + '.' + tlds[0]
-    print(domain)
+        domain = sld + '.' + tlds[0]
+        print(domain)
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser()
