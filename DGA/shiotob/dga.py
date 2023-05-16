@@ -70,7 +70,7 @@ def urlzone_crc(data):
     crc = 0xCA0B56EE
     index = 0
     for i in range(0, len(data)):
-        index = (crc ^ ord(data[i])) & 0xFF
+        index = (crc ^ data[i]) & 0xFF
         crc = (crc >> 8) & 0xFFFFFFFF
         crc ^= lookup_table[index]
     return crc
