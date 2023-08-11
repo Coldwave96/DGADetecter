@@ -44,8 +44,8 @@ tlds_mydoom = 'com-biz-us-net-org-ws-info-in'
 
 for name in family_names:
     commands = []
-    command = 'python3 DGA/' + name + '/dga.py '
-    output_dir = 'Datasets/Malicious/' + name + '/example.csv'
+    command = 'python DGA/' + name + '/dga.py '
+    output_dir = 'Datasets/Raw/Malicious/Grnerated/' + name + '/example.csv'
     match name:
         case 'chinad':
             command += '--time ' + str(seconds) + ' --nr ' + str(nr) + ' --len ' + str(random.randint(10, 19))
