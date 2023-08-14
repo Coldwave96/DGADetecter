@@ -1,5 +1,9 @@
+import os
 import math
+import pickle
 import textstat
+
+import gibberish_train
 
 # Information Entropy
 def cal_entropy(data):
@@ -38,3 +42,16 @@ def cal_vowel(data):
         return vowel_ratio
     else:
         return 0.0
+
+# Gibberish probability     
+def cal_gibberish(data):
+    model_path = 'Outputs/Gibberish/gib_model.pickle'
+    
+    if not os.path.exists(model_path):
+        command = "python gibberish_train"
+        os.system(command)
+    
+    model = pickle.load(open(model_path, 'rb'))
+    model_mat = model['mat']
+
+    return gibberish_train.avg_transition_prob(data, model_mat)

@@ -39,17 +39,8 @@ def train():
         s = float(sum(row))
         for j in range(len(row)):
             row[j] = math.log(row[j] / s)
-    
-    # Find the probability of generating a few arbitrarily choosen good and bad phrases.
-    good_probs = [avg_transition_prob(line, counts) for line in open('Datasets/Words/Gibberish/good.txt')]
-    bad_probs = [avg_transition_prob(line, counts) for line in open('Datasets/Words/Gibberish/bad.txt')]
 
-    # Assert that we actually are capable of detecting the junk.
-    assert min(good_probs) > max(bad_probs)
-
-    # And pick a threshold halfway between the worst good and best bad inputs.
-    thresh = (min(good_probs) + max(bad_probs)) / 2
-    pickle.dump({'mat': counts, 'thresh': thresh}, open('Outputs/Gibberish/gib_model.pki', 'wb'))
+    pickle.dump({'mat': counts}, open('Outputs/Gibberish/gib_model.pickle', 'wb'))
 
     if __name__ == '__main__':
         train()
