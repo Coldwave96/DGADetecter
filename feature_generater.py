@@ -2,8 +2,11 @@ import os
 import math
 import pickle
 import textstat
+import tldextract
+import numpy as np
 
 import gibberish_train
+from ngram_freq_generater import bigrams, trigrams
 
 # Information Entropy
 def cal_entropy(data):
@@ -48,7 +51,7 @@ def cal_gibberish(data):
     model_path = 'Outputs/Gibberish/gib_model.pickle'
     
     if not os.path.exists(model_path):
-        command = "python gibberish_train"
+        command = "python gibberish_train.py"
         os.system(command)
     
     model = pickle.load(open(model_path, 'rb'))
@@ -109,7 +112,7 @@ def cal_consecutive_characters(data):
 
 # Ratio of consecutive consonants
 def is_consonant(char):
-    consonants = "bcdfghjklmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZ"
+    consonants = ['b', 'c', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'm', 'n', 'p', 'q', 'r', 's', 't', 'v', 'w','x', 'y', 'z']
     return char in consonants
 
 def cal_consecutive_consonants(data):
@@ -125,3 +128,80 @@ def cal_consecutive_consonants(data):
         return consecutive_consonants_ratio
     else:
         return 0.0
+    
+# N-gram rank stats
+def load_ngram_rank_file():
+    ngram_rank_file_path = "Datasets/Words/N-gram/ngram-rank-freq.txt"
+    if not os.path.exists(ngram_rank_file_path):
+        command = "python ngram_freq_generater.py"
+        os.system(command)
+
+    ngram_rank_file = open(ngram_rank_file_path, 'r')
+    ngram_rank_dict = dict()
+    for i in ngram_rank_file:
+        _, gram, _, rank = i.strip().split(',')
+        ngram_rank_dict[gram] = int(rank)
+    ngram_rank_file.close()
+    return ngram_rank_dict
+
+def ave(array_):
+    if len(array_) > 0:
+        return array_.mean()
+    else:
+        return 0
+    
+def std(array_):
+    if len(array_) > 0:
+        return array_.std()
+    else:
+        return 0
+
+def cal_ngam_rank_stats(data, ngram_rank_dict):
+    extract = tldextract.TLDExtract(include_psl_private_domains=True)
+    ext = extract(data)
+    
+    main_domain = '$' + ext.domain + '$'
+    unigram_rank_main = np.array([ngram_rank_dict[i] if i in ngram_rank_dict else 0 for i in main_domain[1:-1]])
+    bigram_rank_main = np.array([ngram_rank_dict[''.join(i)] if ''.join(i) in ngram_rank_dict else 0 for i in bigrams(main_domain)])
+    trigram_rank_main = np.array([ngram_rank_dict[''.join(i)] if ''.join(i) in ngram_rank_dict else 0 for i in trigrams(main_domain)])
+    
+    tld = ext.suffix
+    tld_split = tld.split('.')
+    if len(tld_split) > 1:
+        tld = tld_split[-1]
+        tld_domain = '$' + tld_split[-2] + '$'
+        unigram_rank_tld = np.array([ngram_rank_dict[i] if i in ngram_rank_dict else 0 for i in tld_domain[1:-1]])
+        bigram_rank_tld = np.array([ngram_rank_dict[''.join(i)] if ''.join(i) in ngram_rank_dict else 0 for i in bigrams(tld_domain)])
+        trigram_rank_tld = np.array([ngram_rank_dict[''.join(i)] if ''.join(i) in ngram_rank_dict else 0 for i in trigrams(tld_domain)])
+        
+        unigram_rank = np.concatenate((unigram_rank_main, unigram_rank_tld))
+        bigram_rank = np.concatenate((bigram_rank_main, bigram_rank_tld))
+        trigram_rank = np.concatenate((trigram_rank_main, trigram_rank_tld))
+    else:
+        unigram_rank = unigram_rank_main
+        bigram_rank = bigram_rank_main
+        trigram_rank = trigram_rank_main
+
+    subdomain = ext.subdomain
+    subdomain_split = subdomain.split('.')
+    if len(subdomain_split) > 0:
+        for string in subdomain_split:
+            string = '$' + string + '$'
+            unigram_rank_sub = np.array([ngram_rank_dict[i] if i in ngram_rank_dict else 0 for i in string[1:-1]])
+            bigram_rank_sub = np.array([ngram_rank_dict[''.join(i)] if ''.join(i) in ngram_rank_dict else 0 for i in bigrams(string)])
+            trigram_rank_sub = np.array([ngram_rank_dict[''.join(i)] if ''.join(i) in ngram_rank_dict else 0 for i in trigrams(string)])
+
+            unigram_rank = np.concatenate((unigram_rank, unigram_rank_sub))
+            bigram_rank = np.concatenate((bigram_rank, bigram_rank_sub))
+            trigram_rank = np.concatenate((trigram_rank, trigram_rank_sub))
+    
+    unigram_rank_ave = ave(unigram_rank)
+    unigram_rank_std = std(unigram_rank)
+
+    bigram_rank_ave = ave(bigram_rank)
+    bigram_rank_std = std(bigram_rank)
+
+    trigram_rank_ave = ave(trigram_rank)
+    trigram_rank_std = std(trigram_rank)
+
+    return unigram_rank_ave, unigram_rank_std, bigram_rank_ave, bigram_rank_std, trigram_rank_ave, trigram_rank_std

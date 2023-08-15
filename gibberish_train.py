@@ -1,3 +1,7 @@
+'''
+this script generate the markov chain of 2-gram from Datasets/Words/Gibberish/gibberish.txt
+'''
+
 import math
 import pickle
 

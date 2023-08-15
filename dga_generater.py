@@ -1,3 +1,7 @@
+'''
+this script generate DGA domains with different families
+'''
+
 import os
 import random
 import datetime
