@@ -5,6 +5,7 @@ import pickle
 import textstat
 import tldextract
 import numpy as np
+import pandas as pd
 from collections import defaultdict
 
 import gibberish_train
@@ -49,8 +50,8 @@ def cal_vowels(data):
     else:
         return 0.0
 
-# Gibberish probability     
-def cal_gibberish(data, data_path):
+# Gibberish probability
+def load_gib_model(data_path):
     model_path = 'Outputs/Gibberish/gib_model.pickle'
     
     if not os.path.exists(model_path):
@@ -58,7 +59,9 @@ def cal_gibberish(data, data_path):
     
     model = pickle.load(open(model_path, 'rb'))
     model_mat = model['mat']
+    return model_mat
 
+def cal_gibberish(data, model_mat):
     return gibberish_train.avg_transition_prob(data, model_mat)
 
 # Ratio of numbers
@@ -157,8 +160,7 @@ def std(array_):
     else:
         return 0
 
-def cal_ngam_rank_stats(data, data_path):
-    ngram_rank_dict = load_ngram_rank_file(data_path)
+def cal_ngam_rank_stats(data, ngram_rank_dict):
     extract = tldextract.TLDExtract(include_psl_private_domains=True)
     ext = extract(data)
     
@@ -209,11 +211,11 @@ def cal_ngam_rank_stats(data, data_path):
     return unigram_rank_ave, unigram_rank_std, bigram_rank_ave, bigram_rank_std, trigram_rank_ave, trigram_rank_std
 
 # Markov chain
-def cal_markov_probs(data, data_path, n):
+def load_trand_matrix(data_path, n):
     trans_matrix_path = f"Outputs/Markov/trans_matrix_{n}.csv"
     if not os.path.exists(trans_matrix_path):
         markov_generater.train(data_path, n)
-
+    
     transitions = defaultdict(lambda: defaultdict(float))
     f_trans = open(trans_matrix_path, 'r')
     for f in f_trans:
@@ -221,7 +223,9 @@ def cal_markov_probs(data, data_path, n):
         value = float(value)
         transitions[key1][key2] = value
     f_trans.close()
-    
+    return transitions
+
+def cal_markov_probs(data, transitions, n):
     if n == 2:
         ngram = [''.join((i, j)) for i, j in ngram_freq_generater.bigrams(data) if not i == None]
     elif n == 3:
@@ -236,3 +240,37 @@ def cal_markov_probs(data, data_path, n):
         prob *= next_step
     
     return prob
+
+# Length of domain
+def cal_length(data):
+    return len(data)
+
+# TLD rank
+def load_tld_rank_file(data_path):
+    default_path = "Outputs/TLD-Rank/tld_top_rank.csv"
+    if os.path.exists(default_path):
+        tld_top_rank_df = pd.read_csv(default_path)
+    else:
+        tld_top_rank_df = pd.DataFrame()
+        tld_rank_df = pd.read_csv(data_path)
+        for _, row in tld_rank_df.iterrows():
+            if len(row[1].strip().split('.')) == 1:
+                temp = pd.DataFrame(
+                    {
+                        'rank': row[0],
+                        'tld': row[1]
+                    },
+                    index = [tld_top_rank_df.size]
+                )
+                tld_top_rank_df = pd.concat([tld_top_rank_df, temp], ignore_index=True)
+        tld_top_rank_df.to_csv("Outputs/TLD-Rank/tld_top_rank.csv")
+    
+    return tld_top_rank_df
+
+def cal_tld_rank(data, tld_top_rank_df):
+    tld = data.split('.')[-1]
+    for _, row in tld_top_rank_df.iterrows():
+        if row['tld'] == tld:
+            return row['rank']
+        else:
+            return -1
