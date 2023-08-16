@@ -29,12 +29,12 @@ def avg_transition_prob(line, log_prob_mat):
     # The exponentiation translates from log probs to probs.
     return math.exp(log_prob / (transition_ct or 1))
 
-def train():
+def train(data_path):
     k = len(accepted_chars)
     counts = [[10 for i in range(k)] for i in range(k)]
 
     # Count transitions from big text file
-    for line in open('Datasets/Words/Gibberish/gibberish.txt'):
+    for line in open(data_path):
         for a, b in ngram(2, line):
             counts[pos[a]][pos[b]] += 1
     
@@ -45,6 +45,3 @@ def train():
             row[j] = math.log(row[j] / s)
 
     pickle.dump({'mat': counts}, open('Outputs/Gibberish/gib_model.pickle', 'wb'))
-
-    if __name__ == '__main__':
-        train()

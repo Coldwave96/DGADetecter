@@ -1,12 +1,15 @@
 import os
+import sys
 import math
 import pickle
 import textstat
 import tldextract
 import numpy as np
+from collections import defaultdict
 
 import gibberish_train
-from ngram_freq_generater import bigrams, trigrams
+import markov_generater
+import ngram_freq_generater
 
 # Information Entropy
 def cal_entropy(data):
@@ -47,12 +50,11 @@ def cal_vowels(data):
         return 0.0
 
 # Gibberish probability     
-def cal_gibberish(data):
+def cal_gibberish(data, data_path):
     model_path = 'Outputs/Gibberish/gib_model.pickle'
     
     if not os.path.exists(model_path):
-        command = "python gibberish_train.py"
-        os.system(command)
+        gibberish_train.train(data_path)
     
     model = pickle.load(open(model_path, 'rb'))
     model_mat = model['mat']
@@ -130,11 +132,10 @@ def cal_consecutive_consonants(data):
         return 0.0
     
 # N-gram rank stats
-def load_ngram_rank_file():
+def load_ngram_rank_file(data_path):
     ngram_rank_file_path = "Datasets/Words/N-gram/ngram-rank-freq.txt"
     if not os.path.exists(ngram_rank_file_path):
-        command = "python ngram_freq_generater.py"
-        os.system(command)
+        ngram_freq_generater.train(data_path)
 
     ngram_rank_file = open(ngram_rank_file_path, 'r')
     ngram_rank_dict = dict()
@@ -156,14 +157,15 @@ def std(array_):
     else:
         return 0
 
-def cal_ngam_rank_stats(data, ngram_rank_dict):
+def cal_ngam_rank_stats(data, data_path):
+    ngram_rank_dict = load_ngram_rank_file(data_path)
     extract = tldextract.TLDExtract(include_psl_private_domains=True)
     ext = extract(data)
     
     main_domain = '$' + ext.domain + '$'
     unigram_rank_main = np.array([ngram_rank_dict[i] if i in ngram_rank_dict else 0 for i in main_domain[1:-1]])
-    bigram_rank_main = np.array([ngram_rank_dict[''.join(i)] if ''.join(i) in ngram_rank_dict else 0 for i in bigrams(main_domain)])
-    trigram_rank_main = np.array([ngram_rank_dict[''.join(i)] if ''.join(i) in ngram_rank_dict else 0 for i in trigrams(main_domain)])
+    bigram_rank_main = np.array([ngram_rank_dict[''.join(i)] if ''.join(i) in ngram_rank_dict else 0 for i in ngram_freq_generater.bigrams(main_domain)])
+    trigram_rank_main = np.array([ngram_rank_dict[''.join(i)] if ''.join(i) in ngram_rank_dict else 0 for i in ngram_freq_generater.trigrams(main_domain)])
     
     tld = ext.suffix
     tld_split = tld.split('.')
@@ -171,8 +173,8 @@ def cal_ngam_rank_stats(data, ngram_rank_dict):
         tld = tld_split[-1]
         tld_domain = '$' + tld_split[-2] + '$'
         unigram_rank_tld = np.array([ngram_rank_dict[i] if i in ngram_rank_dict else 0 for i in tld_domain[1:-1]])
-        bigram_rank_tld = np.array([ngram_rank_dict[''.join(i)] if ''.join(i) in ngram_rank_dict else 0 for i in bigrams(tld_domain)])
-        trigram_rank_tld = np.array([ngram_rank_dict[''.join(i)] if ''.join(i) in ngram_rank_dict else 0 for i in trigrams(tld_domain)])
+        bigram_rank_tld = np.array([ngram_rank_dict[''.join(i)] if ''.join(i) in ngram_rank_dict else 0 for i in ngram_freq_generater.bigrams(tld_domain)])
+        trigram_rank_tld = np.array([ngram_rank_dict[''.join(i)] if ''.join(i) in ngram_rank_dict else 0 for i in ngram_freq_generater.rigrams(tld_domain)])
         
         unigram_rank = np.concatenate((unigram_rank_main, unigram_rank_tld))
         bigram_rank = np.concatenate((bigram_rank_main, bigram_rank_tld))
@@ -188,8 +190,8 @@ def cal_ngam_rank_stats(data, ngram_rank_dict):
         for string in subdomain_split:
             string = '$' + string + '$'
             unigram_rank_sub = np.array([ngram_rank_dict[i] if i in ngram_rank_dict else 0 for i in string[1:-1]])
-            bigram_rank_sub = np.array([ngram_rank_dict[''.join(i)] if ''.join(i) in ngram_rank_dict else 0 for i in bigrams(string)])
-            trigram_rank_sub = np.array([ngram_rank_dict[''.join(i)] if ''.join(i) in ngram_rank_dict else 0 for i in trigrams(string)])
+            bigram_rank_sub = np.array([ngram_rank_dict[''.join(i)] if ''.join(i) in ngram_rank_dict else 0 for i in ngram_freq_generater.bigrams(string)])
+            trigram_rank_sub = np.array([ngram_rank_dict[''.join(i)] if ''.join(i) in ngram_rank_dict else 0 for i in ngram_freq_generater.trigrams(string)])
 
             unigram_rank = np.concatenate((unigram_rank, unigram_rank_sub))
             bigram_rank = np.concatenate((bigram_rank, bigram_rank_sub))
@@ -205,3 +207,32 @@ def cal_ngam_rank_stats(data, ngram_rank_dict):
     trigram_rank_std = std(trigram_rank)
 
     return unigram_rank_ave, unigram_rank_std, bigram_rank_ave, bigram_rank_std, trigram_rank_ave, trigram_rank_std
+
+# Markov chain
+def cal_markov_probs(data, data_path, n):
+    trans_matrix_path = f"Outputs/Markov/trans_matrix_{n}.csv"
+    if not os.path.exists(trans_matrix_path):
+        markov_generater.train(data_path, n)
+
+    transitions = defaultdict(lambda: defaultdict(float))
+    f_trans = open(trans_matrix_path, 'r')
+    for f in f_trans:
+        key1, key2, value = f.strip().split('\t')
+        value = float(value)
+        transitions[key1][key2] = value
+    f_trans.close()
+    
+    if n == 2:
+        ngram = [''.join((i, j)) for i, j in ngram_freq_generater.bigrams(data) if not i == None]
+    elif n == 3:
+        ngram = [''.join((i, j)) for i, j in ngram_freq_generater.trigrams(data) if not i == None]
+    else:
+        print("N-length should be 2 or 3.")
+        sys.exit(0)
+    
+    prob = transitions[''][ngram[0]]
+    for x in range(len(ngram) - 1):
+        next_step = transitions[ngram[x]][ngram[x + 1]]
+        prob *= next_step
+    
+    return prob
