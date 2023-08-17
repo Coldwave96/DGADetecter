@@ -5,7 +5,6 @@ import pandas as pd
 from collections import defaultdict
 
 def train(data_path, n):
-    # Get a list of words with only ASCII characters
     domain_df = pd.read_csv(data_path)
     words = [row[1].strip().lower() for _, row in domain_df.iterrows()]
 

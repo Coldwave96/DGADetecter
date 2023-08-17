@@ -27,7 +27,7 @@ def cal_entropy(data):
     return entropy
 
 # Readability
-def cal_Readability(data):
+def cal_readability(data):
     score = textstat.flesch_reading_ease(data)
     return score
 
@@ -211,7 +211,7 @@ def cal_ngam_rank_stats(data, ngram_rank_dict):
     return unigram_rank_ave, unigram_rank_std, bigram_rank_ave, bigram_rank_std, trigram_rank_ave, trigram_rank_std
 
 # Markov chain
-def load_trand_matrix(data_path, n):
+def load_trans_matrix(data_path, n):
     trans_matrix_path = f"Outputs/Markov/trans_matrix_{n}.csv"
     if not os.path.exists(trans_matrix_path):
         markov_generater.train(data_path, n)
