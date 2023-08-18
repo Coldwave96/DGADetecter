@@ -17,7 +17,7 @@ def normalize(line):
 def ngram(n, line):
     normalized_line = normalize(line)
     for start in range(0, len(normalized_line) - n + 1):
-        yield "".join(normalized_line[start, start + n])
+        yield "".join(normalized_line[start : start + n])
 
 # Return the average transition prob from line through log_prob_mat.
 def avg_transition_prob(line, log_prob_mat):

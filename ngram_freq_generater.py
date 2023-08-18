@@ -67,17 +67,17 @@ def train(data_path):
                     trigram_rank[''.join(i)] += 1
 
         file = open("Outputs/N-gram/ngram-rank-freq.txt", 'w')
-        for rank, (i, freq) in enumerate(sorted(unigram_rank.iteritems(), key = lambda x:x[1], reverse = True)):
+        for rank, (i, freq) in enumerate(sorted(unigram_rank.items(), key = lambda x:x[1], reverse = True)):
             try:
                 file.write('1,%s,%d,%d\n' % (i, freq, rank + 1))
             except UnicodeEncodeError:
                 continue
-        for rank, (i, freq) in enumerate(sorted(bigram_rank.iteritems(), key = lambda x:x[1], reverse = True)):
+        for rank, (i, freq) in enumerate(sorted(bigram_rank.items(), key = lambda x:x[1], reverse = True)):
             try:
                 file.write('2,%s,%d,%d\n' % (i, freq, rank + 1))
             except UnicodeEncodeError:
                 continue
-        for rank,(i, freq) in enumerate(sorted(trigram_rank.iteritems(), key = lambda x:x[1], reverse = True)):
+        for rank,(i, freq) in enumerate(sorted(trigram_rank.items(), key = lambda x:x[1], reverse = True)):
             try:
                 file.write('3,%s,%d,%d\n' % (i, freq, rank+1))
             except UnicodeEncodeError:

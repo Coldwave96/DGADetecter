@@ -1,3 +1,5 @@
 textstat
 pandas
 tldextract
+torch
+scikit-learn
