@@ -5,8 +5,9 @@ import pandas as pd
 from collections import defaultdict
 
 def train(data_path, n):
-    domain_df = pd.read_csv(data_path)
+    domain_df = pd.read_csv(data_path, header=None)
     words = [row[1].strip().lower() for _, row in domain_df.iterrows()]
+    words = ["^" + w + "$" for w in words]
 
     # Construct a discrete-time markov chain of n-grams
     transitions = defaultdict(lambda: defaultdict(float))
@@ -25,7 +26,7 @@ def train(data_path, n):
             transitions[gram][next] /= total
     
     fw = open(f"Outputs/Markov/trans_matrix_{n}.csv", 'w')
-    for key1, dict in transitions.iteritems():
-        for key2, value in dict.iteritems():
+    for key1, dict in transitions.items():
+        for key2, value in dict.items():
             fw.write('%s\t%s\t%f\n' % (key1, key2, value))
     fw.close()

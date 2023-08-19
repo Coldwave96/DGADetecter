@@ -36,12 +36,12 @@ print(f"Found {len(malicious_dgarchive_file_list)} DGA domain files in total.\n"
 for file in malicious_dgarchive_file_list[:2]:  # testing only
     file_name = file.strip().split('/')[-1]
     print(f"Loading {file_name}...")
-    dgarchive_df = pd.read_csv(file)
+    dgarchive_df = pd.read_csv(file, sep=',', header=None)
     dga_family = ""
     for index, row in dgarchive_df.iterrows():
         dga_domain = row[0]
         if len(dga_family) == 0:
-            dga_family = dga_family.join(row[-1].split('_')[0])
+            dga_family = dga_family.join(row[len(row) - 1].split('_')[0])
             if dga_family not in dga_families_dict:
                 dga_families_dict[dga_family] = len(dga_families_dict) + 1
         temp_dga = pd.DataFrame(
@@ -64,8 +64,8 @@ print(f"[*] Done with all the DGA fmailes, {num_dga_domains} DGA damins in total
 # Load all the benign domain into a Dataframe
 print("[*] Start loading benign datasets...")
 benign_domain_df = pd.DataFrame()
-# benign_df = pd.read_csv(benign_domain_path)
-benign_df = pd.read_csv(benign_domain_path).iloc[:1000]  # test only
+# benign_df = pd.read_csv(benign_domain_path, sep=',', header=None)
+benign_df = pd.read_csv(benign_domain_path, sep=',', header=None).iloc[:1000]  # test only
 for index, row in benign_df.iterrows():
     benign_domain = row[1]
     temp_benign = pd.DataFrame(
@@ -235,16 +235,13 @@ for epoch in range(num_epochs):
             print(f"Epoch {epoch}, Batch {batch_idx}, Loss: {loss.item():.4f}")
 
 # Evaluation
-def evaluate():
-    model.eval()
-    with torch.no_grad():
-        y_pred_probs = model(x_test_seq, torch.FloatTensor(x_test_features))
-        _, y_pred = torch.max(y_pred_probs, 1)
-        classification_report = classification_report(y_test, y_pred, target_names=dga_families_dict)
-        print(classification_report)
-
 print("[*] Evaluation")
-evaluate()
+model.eval()
+with torch.no_grad():
+    y_pred_probs = model(x_test_seq, torch.FloatTensor(x_test_features))
+    _, y_pred = torch.max(y_pred_probs, 1)
+    classification_report = classification_report(y_test, y_pred, target_names=dga_families_dict)
+    print(classification_report)
 
 # Save model
 torch.save(model.state_dict(), 'Outputs/Models/combined_model.pth')

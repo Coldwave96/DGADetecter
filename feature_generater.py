@@ -176,7 +176,7 @@ def cal_ngam_rank_stats(data, ngram_rank_dict):
         tld_domain = '$' + tld_split[-2] + '$'
         unigram_rank_tld = np.array([ngram_rank_dict[i] if i in ngram_rank_dict else 0 for i in tld_domain[1:-1]])
         bigram_rank_tld = np.array([ngram_rank_dict[''.join(i)] if ''.join(i) in ngram_rank_dict else 0 for i in ngram_freq_generater.bigrams(tld_domain)])
-        trigram_rank_tld = np.array([ngram_rank_dict[''.join(i)] if ''.join(i) in ngram_rank_dict else 0 for i in ngram_freq_generater.rigrams(tld_domain)])
+        trigram_rank_tld = np.array([ngram_rank_dict[''.join(i)] if ''.join(i) in ngram_rank_dict else 0 for i in ngram_freq_generater.trigrams(tld_domain)])
         
         unigram_rank = np.concatenate((unigram_rank_main, unigram_rank_tld))
         bigram_rank = np.concatenate((bigram_rank_main, bigram_rank_tld))
@@ -219,7 +219,7 @@ def load_trans_matrix(data_path, n):
     transitions = defaultdict(lambda: defaultdict(float))
     f_trans = open(trans_matrix_path, 'r')
     for f in f_trans:
-        key1, key2, value = f.strip().split('\t')
+        key1, key2, value = f.rstrip().split('\t') # key1 can be '' so rstrip() only
         value = float(value)
         transitions[key1][key2] = value
     f_trans.close()
@@ -229,7 +229,7 @@ def cal_markov_probs(data, transitions, n):
     if n == 2:
         ngram = [''.join((i, j)) for i, j in ngram_freq_generater.bigrams(data) if not i == None]
     elif n == 3:
-        ngram = [''.join((i, j)) for i, j in ngram_freq_generater.trigrams(data) if not i == None]
+        ngram = [''.join((i, j, k)) for i, j, k in ngram_freq_generater.trigrams(data) if not i == None]
     else:
         print("N-length should be 2 or 3.")
         sys.exit(0)
@@ -252,7 +252,7 @@ def load_tld_rank_file(data_path):
         tld_top_rank_df = pd.read_csv(default_path)
     else:
         tld_top_rank_df = pd.DataFrame()
-        tld_rank_df = pd.read_csv(data_path)
+        tld_rank_df = pd.read_csv(data_path, header=None)
         for _, row in tld_rank_df.iterrows():
             if len(row[1].strip().split('.')) == 1:
                 temp = pd.DataFrame(
@@ -269,8 +269,9 @@ def load_tld_rank_file(data_path):
 
 def cal_tld_rank(data, tld_top_rank_df):
     tld = data.split('.')[-1]
+    rank = 0
     for _, row in tld_top_rank_df.iterrows():
         if row['tld'] == tld:
-            return row['rank']
-        else:
-            return -1
+            rank = int(row['rank'])
+            break
+    return rank

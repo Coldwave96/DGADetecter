@@ -26,7 +26,7 @@ def train(data_path):
     bigram_rank = defaultdict(int)
     trigram_rank = defaultdict(int)
 
-    domain_df = pd.read_csv(data_path)
+    domain_df = pd.read_csv(data_path, header=None)
     extract = tldextract.TLDExtract(include_psl_private_domains=True)
 
     for _, row in domain_df.iterrows():
@@ -66,7 +66,7 @@ def train(data_path):
                 for i in trigrams(string):
                     trigram_rank[''.join(i)] += 1
 
-        file = open("Outputs/N-gram/ngram-rank-freq.txt", 'w')
+        file = open("Datasets/Words/N-gram/ngram-rank-freq.txt", 'w')
         for rank, (i, freq) in enumerate(sorted(unigram_rank.items(), key = lambda x:x[1], reverse = True)):
             try:
                 file.write('1,%s,%d,%d\n' % (i, freq, rank + 1))
