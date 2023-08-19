@@ -32,8 +32,8 @@ dga_families_dict = dict()
 malicious_dgarchive_file_list = list_files_in_folder(malicious_dgarchive_dir)
 num_dga_domains = 0
 print(f"Found {len(malicious_dgarchive_file_list)} DGA domain files in total.\n")
-# for file in malicious_dgarchive_file_list:
-for file in malicious_dgarchive_file_list[:2]:  # testing only
+for file in malicious_dgarchive_file_list:
+# for file in malicious_dgarchive_file_list[:2]:  # test only
     file_name = file.strip().split('/')[-1]
     print(f"Loading {file_name}...")
     dgarchive_df = pd.read_csv(file, sep=',', header=None)
@@ -64,8 +64,8 @@ print(f"[*] Done with all the DGA fmailes, {num_dga_domains} DGA damins in total
 # Load all the benign domain into a Dataframe
 print("[*] Start loading benign datasets...")
 benign_domain_df = pd.DataFrame()
-# benign_df = pd.read_csv(benign_domain_path, sep=',', header=None)
-benign_df = pd.read_csv(benign_domain_path, sep=',', header=None).iloc[:1000]  # test only
+benign_df = pd.read_csv(benign_domain_path, sep=',', header=None)
+# benign_df = pd.read_csv(benign_domain_path, sep=',', header=None).iloc[:1000]  # test only
 for index, row in benign_df.iterrows():
     benign_domain = row[1]
     temp_benign = pd.DataFrame(
