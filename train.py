@@ -153,6 +153,11 @@ for index, row in dataset_df.iterrows():
     if index % (dataset_df.shape[0] / 10) == 0:
         print(f"Progress: {index} / {dataset_df.shape[0]}")
 
+# Save label dict into a local csv file
+label_dict_df = pd.DataFrame(labels_dict)
+label_dict_df.to_csv("Outputs/Datasets/label_dict.csv")
+print("[*] Dictionary of labels saved in Outputs/Datasets/label_dict.csv")
+
 # Save original features into a local csv file
 additional_features_df = pd.DataFrame(additional_features)
 additional_features_df.to_csv("Outputs/Datasets/features_original.csv")
@@ -178,6 +183,15 @@ sequences = [[char_to_index[char] for char in domain] for domain in domains]
 max_length = 50
 padded_sequences = torch.nn.utils.rnn.pad_sequence([torch.LongTensor(seq) for seq in sequences], batch_first=True, padding_value=0)
 padded_sequences = padded_sequences[:, :max_length]
+
+# Save processed data for multi-training progress
+padded_sequences_df = pd.DataFrame(padded_sequences)
+padded_sequences_df.to_csv("Outputs/Datasets/Processed/padded_sequences.csv")
+additional_features_normalized_df = pd.DataFrame(additional_features_normalized)
+additional_features_df.to_csv("Outputs/Datasets/Processed/additional_features.csv")
+labels_df = pd.DataFrame(labels)
+labels_df.to_csv("Outputs/Datasets/Processed/labels.csv")
+print("[*] Processed data saved in Outputs/Datasets//Processed/")
 
 # Split datasets for training and testing
 x_train_seq, x_test_seq, x_train_features, x_test_features, y_train, y_test = train_test_split(padded_sequences, additional_features_normalized, labels, test_size=0.2, random_state=42)
