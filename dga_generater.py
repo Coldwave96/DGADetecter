@@ -83,4 +83,3 @@ for name in family_names:
             command += ' > ' + output_dir
         print("Command: {}".format(command))
         os.system(command)
-        

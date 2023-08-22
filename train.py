@@ -240,8 +240,8 @@ class CombinedModel(torch.nn.Module):
         return predictions
 
 # Create a model instant
-embedding_size = 32
-feature_size = 8
+embedding_size = 64
+feature_size = 32
 additional_features_size = len(additional_features_normalized[0])
 num_classes = len(labels_dict) + 1
 model = CombinedModel(vocab_size, embedding_size, feature_size, additional_features_size, num_classes)
