@@ -28,7 +28,7 @@ By far, 19 features are selected, detailed description listed blow.
 |tld_rank|TLD rank of domain, based on Umbrella top 1m TLD ranking|
 
 ### Automatical Features
-GRU is used to extract a 32-dimension feature matrix from purely raw char-level damin data.
+GRU is used to extract a 32-dimension feature matrix from purely raw char-level domain data.
 
 ## Datasets
 * Benign: [Umbrella Top 1m](https://huggingface.co/datasets/c01dsnap/top-1m)
