@@ -28,7 +28,7 @@ def list_files_in_folder(folder_path):
 # Load all the dga domains into a Dataframe
 print("[*] Start loading DGA datasets...")
 dga_domain_df = pd.DataFrame()
-dga_families_dict = dict()
+labels_dict = dict()
 malicious_dgarchive_file_list = list_files_in_folder(malicious_dgarchive_dir)
 num_dga_domains = 0
 max_sample = 100000
@@ -36,28 +36,28 @@ print(f"Found {len(malicious_dgarchive_file_list)} DGA domain files in total.\n"
 for file in malicious_dgarchive_file_list:
     file_name = file.strip().split('/')[-1]
     print(f"Loading {file_name}...")
-    dgarchive_df = pd.read_csv(file, sep=',', header=None)
-    if dgarchive_df.size > max_sample:
+    dgarchive_df = pd.read_csv(file, header=None)
+    if dgarchive_df.shape[0] > max_sample:
         dgarchive_df = dgarchive_df.iloc[:max_sample]
     dga_family = ""
     for index, row in dgarchive_df.iterrows():
         dga_domain = row[0]
         if len(dga_family) == 0:
             dga_family = dga_family.join(row[len(row) - 1].split('_')[0])
-            if dga_family not in dga_families_dict:
-                dga_families_dict[dga_family] = len(dga_families_dict) + 1
+            if dga_family not in labels_dict:
+                labels_dict[dga_family] = len(labels_dict) + 1
         temp_dga = pd.DataFrame(
             {
                 'domain': dga_domain,
                 'family': dga_family,
-                'label': dga_families_dict[dga_family]
+                'label': labels_dict[dga_family]
             },
-            index = [dga_domain_df.size]
+            index = [dga_domain_df.shape[0]]
         )
         dga_domain_df = pd.concat([dga_domain_df, temp_dga], ignore_index=True)
 
-        if index % int(dgarchive_df.size / 10) == 0:
-            print(f"Progress: {index} / {dgarchive_df.size}")
+        if dgarchive_df.shape[0] > 10 and index % int(dgarchive_df.shape[0] / 10) == 0:
+            print(f"Progress: {index} / {dgarchive_df.shape[0]}")
 
     num_dga_domains += dgarchive_df.size
     print(f"Done with {file_name}, loaded {dgarchive_df.size} {dga_family} DGA domains.\n")
@@ -65,8 +65,9 @@ print(f"[*] Done with all the DGA fmailes, {num_dga_domains} DGA damins in total
 
 # Load all the benign domain into a Dataframe
 print("[*] Start loading benign datasets...")
+labels_dict['benign'] = 0
 benign_domain_df = pd.DataFrame()
-benign_df = pd.read_csv(benign_domain_path, sep=',', header=None)
+benign_df = pd.read_csv(benign_domain_path, header=None)
 for index, row in benign_df.iterrows():
     benign_domain = row[1]
     temp_benign = pd.DataFrame(
@@ -75,13 +76,13 @@ for index, row in benign_df.iterrows():
             'family': 'benign',
             'label': 0
         },
-        index = [benign_domain_df.size]
+        index = [benign_domain_df.shape[0]]
     )
     benign_domain_df = pd.concat([benign_domain_df, temp_benign], ignore_index=True)
 
-    if index % (benign_df.size / 10) == 0:
-        print(f"Progress: {index} / {benign_df.size}")
-print(f"[*] Done with benign dataset, {benign_df.size} benign domains in total.\n")
+    if index % (benign_df.shape[0] / 10) == 0:
+        print(f"Progress: {index} / {benign_df.shape[0]}")
+print(f"[*] Done with benign dataset, {benign_df.shape[0]} benign domains in total.\n")
 
 # Concat malicious and benign domains, then save to a local csv file
 dataset_df = pd.concat([benign_domain_df, dga_domain_df], ignore_index=True)
@@ -146,8 +147,8 @@ for index, row in dataset_df.iterrows():
     domains.append(domain)
     labels.append(label)
 
-    if index % (dataset_df.size / 10) == 0:
-        print(f"Progress: {index} / {dataset_df.size}")
+    if index % (dataset_df.shape[0] / 10) == 0:
+        print(f"Progress: {index} / {dataset_df.shape[0]}")
 
 # Save original features into a local csv file
 additional_features_df = pd.DataFrame(additional_features)
@@ -194,30 +195,38 @@ class DomainDataset(Dataset):
 train_dataset = DomainDataset(x_train_seq, x_train_features, y_train)
 train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
 
+class FeatureExtrator(torch.nn.Module):
+    def __init__(self, vocab_size, embedding_size, feature_size):
+        super(FeatureExtrator, self).__init__()
+        self.embedding = torch.nn.Embedding(vocab_size, embedding_size)
+        self.gru = torch.nn.GRU(embedding_size, feature_size, batch_first=True)
+    
+    def forward(self, x):
+        embedded_x = self.embedding(x)
+        gru_output, _ = self.gru(embedded_x)
+        features = gru_output[:, -1, :]
+        return features
+
 # Construct the combined model
 class CombinedModel(torch.nn.Module):
-    def __init__(self, vocab_size, embedding_dim, lstm_hidden_dim, num_additional_features, output_dim):
+    def __init__(self, vocab_size, embedding_size, feature_size, additional_features_size, num_classes):
         super(CombinedModel, self).__init__()
-        self.embedding = torch.nn.Embedding(vocab_size, embedding_dim)
-        self.lstm = torch.nn.LSTM(embedding_dim, lstm_hidden_dim)
-        self.fc1 = torch.nn.Linear(lstm_hidden_dim + num_additional_features, 128)
-        self.fc2 = torch.nn.Linear(128, output_dim)
+        self.feature_extractor = FeatureExtrator(vocab_size, embedding_size, feature_size)
+        self.fc = torch.nn.Linear(feature_size + additional_features_size, num_classes)
 
-    def forward(self, seq, features):
-        embedded = self.embedding(seq)
-        lstm_output, _ = self.lstm(embedded)
-        lstm_hidden_state = lstm_output[:, -1, :]
-        combined_features = torch.cat((lstm_hidden_state, features), dim=1)
-        fc1_output = self.fc1(combined_features)
-        final_output = self.fc2(fc1_output)
-        return final_output
+    def forward(self, x, additional_features):
+        extracted_features = self.feature_extractor(x)
+        combined_features = torch.cat((extracted_features, additional_features), dim=1)
+        predictions = self.fc(combined_features)
+        predictions = torch.nn.functional.log_softmax(predictions, dim=1)
+        return predictions
 
 # Create a model instant
-embedding_dim = 128
-lstm_hidden_dim = 64
-num_additional_features = len(additional_features_normalized[0])
-output_dim = len(dga_families_dict) + 1
-model = CombinedModel(vocab_size, embedding_dim, lstm_hidden_dim, num_additional_features, output_dim)
+embedding_size = 32
+feature_size = 8
+additional_features_size = len(additional_features_normalized[0])
+num_classes = len(labels_dict) + 1
+model = CombinedModel(vocab_size, embedding_size, feature_size, additional_features_size, num_classes)
 
 # Train
 criterion = torch.nn.CrossEntropyLoss()
@@ -225,13 +234,16 @@ optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
 num_epochs = 10
 for epoch in range(num_epochs):
-    model.train()
     for batch_idx, (seq, features, target) in enumerate(train_loader):
         optimizer.zero_grad()
         output = model(seq, features.float())
         loss = criterion(output, target)
         loss.backward()
+        
+        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1)
+        
         optimizer.step()
+        
         if batch_idx % 10 == 0:
             print(f"Epoch {epoch}, Batch {batch_idx}, Loss: {loss.item():.4f}")
 
@@ -240,8 +252,8 @@ print("[*] Evaluation")
 model.eval()
 with torch.no_grad():
     y_pred_probs = model(x_test_seq, torch.FloatTensor(x_test_features))
-    _, y_pred = torch.max(y_pred_probs, 1)
-    classification_report = classification_report(y_test, y_pred, target_names=dga_families_dict)
+    predicted_classes = torch.argmax(y_pred_probs, dim=1)
+    classification_report = classification_report(y_test, predicted_classes, target_names=labels_dict)
     print(classification_report)
 
 # Save model
