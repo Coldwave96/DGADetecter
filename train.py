@@ -59,8 +59,8 @@ for file in malicious_dgarchive_file_list:
         if dgarchive_df.shape[0] > 10 and index % int(dgarchive_df.shape[0] / 10) == 0:
             print(f"Progress: {index} / {dgarchive_df.shape[0]}")
 
-    num_dga_domains += dgarchive_df.size
-    print(f"Done with {file_name}, loaded {dgarchive_df.size} {dga_family} DGA domains.\n")
+    num_dga_domains += dgarchive_df.shape[0]
+    print(f"Done with {file_name}, loaded {dgarchive_df.shape[0]} {dga_family} DGA domains.\n")
 print(f"[*] Done with all the DGA fmailes, {num_dga_domains} DGA damins in total.\n")
 
 # Load all the benign domain into a Dataframe
