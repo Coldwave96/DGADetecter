@@ -116,8 +116,11 @@ for index, row in dataset_df.iterrows():
     consecutive_ratio = feature_generater.cal_consecutive_characters(domain)
     consecutive_consonants_ratio = feature_generater.cal_consecutive_consonants(domain)
     unigram_rank_ave, unigram_rank_std, bigram_rank_ave, bigram_rank_std, trigram_rank_ave, trigram_rank_std = feature_generater.cal_ngam_rank_stats(domain, ngram_rank_dict)
+    
+    markov_domain = '^' + domain + '$'
     markov_prob_2 = feature_generater.cal_markov_probs(domain, transitions_2, 2)
     markov_prob_3 = feature_generater.cal_markov_probs(domain, transitions_3, 3)
+    
     length_domain = feature_generater.cal_length(domain)
     tld_rank = feature_generater.cal_tld_rank(domain, tld_top_rank_df)
 
@@ -157,10 +160,11 @@ print("[*] Original features saved in Outputs/Datasets/features_original.csv")
 
 # Normalize all the features since there are no catagorical features
 print("[*] Normalizing numerical human designed features...")
+epsilon = 1e-8
 additional_features_array = np.array(additional_features)
 mean = np.mean(additional_features_array, axis=0)
 std = np.std(additional_features_array, axis=0)
-additional_features_normalized = (additional_features_array - mean) / std
+additional_features_normalized = (additional_features_array - mean) / (std + epsilon)
 
 print("[*] Processing raw domains...")
 # Create the vectorizer for raw domains
