@@ -1,4 +1,5 @@
 import os
+import json
 import numpy as np
 import pandas as pd
 
@@ -28,9 +29,10 @@ def list_files_in_folder(folder_path):
 # Load all the dga domains into a Dataframe
 print("[*] Start loading DGA datasets...")
 dga_domain_df = pd.DataFrame()
-labels_dict = dict()
+swapped_labels_dict = dict()
 malicious_dgarchive_file_list = list_files_in_folder(malicious_dgarchive_dir)
 num_dga_domains = 0
+num_dga_files = 0
 max_sample = 100000
 print(f"Found {len(malicious_dgarchive_file_list)} DGA domain files in total.\n")
 for file in malicious_dgarchive_file_list:
@@ -44,13 +46,13 @@ for file in malicious_dgarchive_file_list:
         dga_domain = row[0]
         if len(dga_family) == 0:
             dga_family = dga_family.join(row[len(row) - 1].split('_')[0])
-            if dga_family not in labels_dict:
-                labels_dict[dga_family] = len(labels_dict) + 1
+            if dga_family not in swapped_labels_dict:
+                swapped_labels_dict[dga_family] = len(swapped_labels_dict) + 1
         temp_dga = pd.DataFrame(
             {
                 'domain': dga_domain,
                 'family': dga_family,
-                'label': labels_dict[dga_family]
+                'label': swapped_labels_dict[dga_family]
             },
             index = [dga_domain_df.shape[0]]
         )
@@ -60,12 +62,14 @@ for file in malicious_dgarchive_file_list:
             print(f"Progress: {index} / {dgarchive_df.shape[0]}")
 
     num_dga_domains += dgarchive_df.shape[0]
-    print(f"Done with {file_name}, loaded {dgarchive_df.shape[0]} {dga_family} DGA domains.\n")
+    num_dga_files += 1
+    print(f"Done with {file_name}, loaded {dgarchive_df.shape[0]} {dga_family} DGA domains. Total: {num_dga_files}/{len(malicious_dgarchive_file_list)}\n")
 print(f"[*] Done with all the DGA fmailes, {num_dga_domains} DGA damins in total.\n")
 
 # Load all the benign domain into a Dataframe
 print("[*] Start loading benign datasets...")
-labels_dict['benign'] = 0
+swapped_labels_dict['benign'] = 0
+labels_dict = {v: k for k, v in swapped_labels_dict.items()}
 benign_domain_df = pd.DataFrame()
 benign_df = pd.read_csv(benign_domain_path, header=None)
 for index, row in benign_df.iterrows():
@@ -89,6 +93,12 @@ dataset_df = pd.concat([benign_domain_df, dga_domain_df], ignore_index=True)
 dataset_df.to_csv("Outputs/Datasets/raw_domains_mix.csv")
 print("[*] Mixed raw domains saved in Outputs/Datasets/raw_domains_mix.csv\n")
 
+# # Load mixed datasets from local files
+# dataset_df = pd.read_csv("Outputs/Datasets/raw_domains_mix.csv")
+
+# # Re-build the label dict directly from local files
+# labels_dict = dict()
+
 # Generate man-made features & Convert original domain string into a vector for extracting features
 additional_features = []
 labels = []
@@ -105,6 +115,11 @@ print("[*] Start generating human designed features...")
 for index, row in dataset_df.iterrows():
     domain = row['domain']
     label = row['label']
+
+    # # Re-build the label dict directly from local files
+    # family = row['family']
+    # if label not in labels_dict:
+    #     labels_dict[label] = family
 
     entropy = feature_generater.cal_entropy(domain)
     readability = feature_generater.cal_readability(domain)
@@ -153,15 +168,15 @@ for index, row in dataset_df.iterrows():
     if index % (dataset_df.shape[0] / 10) == 0:
         print(f"Progress: {index} / {dataset_df.shape[0]}")
 
-# Save label dict into a local csv file
-label_dict_df = pd.DataFrame(labels_dict)
-label_dict_df.to_csv("Outputs/Datasets/label_dict.csv")
-print("[*] Dictionary of labels saved in Outputs/Datasets/label_dict.csv")
-
 # Save original features into a local csv file
 additional_features_df = pd.DataFrame(additional_features)
 additional_features_df.to_csv("Outputs/Datasets/features_original.csv")
 print("[*] Original features saved in Outputs/Datasets/features_original.csv")
+
+# Save label dict into a local csv file
+with open("Outputs/Datasets/label_dict.json", 'w') as file:
+    json.dump(labels_dict, file)
+print("[*] Dictionary of labels saved in Outputs/Datasets/label_dict.json")
 
 # Normalize all the features since there are no catagorical features
 print("[*] Normalizing numerical human designed features...")
@@ -185,13 +200,25 @@ padded_sequences = torch.nn.utils.rnn.pad_sequence([torch.LongTensor(seq) for se
 padded_sequences = padded_sequences[:, :max_length]
 
 # Save processed data for multi-training progress
+padded_sequences_path = "Outputs/Datasets/Processed/padded_sequences.csv"
+additional_features_normalized_path = "Outputs/Datasets/Processed/additional_features.csv"
+labels_path = "Outputs/Datasets/Processed/labels.csv"
+
 padded_sequences_df = pd.DataFrame(padded_sequences)
-padded_sequences_df.to_csv("Outputs/Datasets/Processed/padded_sequences.csv")
+padded_sequences_df.to_csv(padded_sequences_path)
+
 additional_features_normalized_df = pd.DataFrame(additional_features_normalized)
-additional_features_df.to_csv("Outputs/Datasets/Processed/additional_features.csv")
+additional_features_df.to_csv(additional_features_normalized_path)
+
 labels_df = pd.DataFrame(labels)
-labels_df.to_csv("Outputs/Datasets/Processed/labels.csv")
-print("[*] Processed data saved in Outputs/Datasets//Processed/")
+labels_df.to_csv(labels_path)
+
+print("[*] Processed data saved in Outputs/Datasets/Processed/")
+
+# Load precessed datasets
+# padded_sequences = pd.read_csv(padded_sequences_path)
+# additional_features_normalized = pd.read_csv(additional_features_normalized_path)
+# labels = pd.read_csv(labels_path)
 
 # Split datasets for training and testing
 x_train_seq, x_test_seq, x_train_features, x_test_features, y_train, y_test = train_test_split(padded_sequences, additional_features_normalized, labels, test_size=0.2, random_state=42)

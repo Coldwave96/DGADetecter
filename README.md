@@ -35,6 +35,8 @@ GRU is used to extract a 32-dimension feature matrix from purely raw char-level 
 * Malicious: [DGArchive](https://dgarchive.caad.fkie.fraunhofer.de/site/)
 * Generated from DGA genrating algorithms, which matained by [360netlab](https://github.com/360netlab/DGA)
 
+**View [here](https://huggingface.co/datasets/c01dsnap/DGADetector-Mixed) for concated datasets.**
+
 ## Go
 1. (Optional) Run `python dga_generater.py` for help, if you want to generate dga domains via dga generating algorithms.
 2. Run `python train.py` to start the whole progress, including pre-processing, training and evaluation.
