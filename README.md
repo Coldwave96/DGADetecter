@@ -39,4 +39,5 @@ GRU is used to extract a 32-dimension feature matrix from purely raw char-level 
 
 ## Go
 1. (Optional) Run `python dga_generater.py` for help, if you want to generate dga domains via dga generating algorithms.
-2. Run `python train.py` to start the whole progress, including pre-processing, training and evaluation.
+2. Run `python train.py` to start the whole progress based on original datasets in **Datasets** folder, including pre-processing, training and evaluation.
+3. Run `python train_processed.py` to re-train the model based on processed datasets in **Outputs/Datasets/** folder.
