@@ -4,11 +4,12 @@ import numpy as np
 import pandas as pd
 
 import torch
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import DataLoader
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
 
 import feature_generater
+from utils import DomainDataset, CombinedModel
 
 # Datasets file path
 benign_domain_path = "Datasets/Benign/top-1m-umbrella.csv"
@@ -19,7 +20,7 @@ gibberish_dataset_path = "Datasets/Words/Gibberish/gibberish.txt"
 # Load all dga families files
 def list_files_in_folder(folder_path):
     file_list = []
-    for root, dirs, files in os.walk(folder_path):
+    for root, _, files in os.walk(folder_path):
         for file in files:
             if file.endswith(".csv"):
                 file_path = os.path.join(root, file)
@@ -93,12 +94,6 @@ dataset_df = pd.concat([benign_domain_df, dga_domain_df], ignore_index=True)
 dataset_df.to_csv("Outputs/Datasets/raw_domains_mix.csv")
 print("[*] Mixed raw domains saved in Outputs/Datasets/raw_domains_mix.csv\n")
 
-# # Load mixed datasets from local files
-# dataset_df = pd.read_csv("Outputs/Datasets/raw_domains_mix.csv")
-
-# # Re-build the label dict directly from local files
-# labels_dict = dict()
-
 # Generate man-made features & Convert original domain string into a vector for extracting features
 additional_features = []
 labels = []
@@ -115,11 +110,6 @@ print("[*] Start generating human designed features...")
 for index, row in dataset_df.iterrows():
     domain = row['domain']
     label = row['label']
-
-    # # Re-build the label dict directly from local files
-    # family = row['family']
-    # if label not in labels_dict:
-    #     labels_dict[label] = family
 
     entropy = feature_generater.cal_entropy(domain)
     readability = feature_generater.cal_readability(domain)
@@ -200,7 +190,7 @@ padded_sequences = torch.nn.utils.rnn.pad_sequence([torch.LongTensor(seq) for se
 padded_sequences = padded_sequences[:, :max_length]
 
 # Save processed data for multi-training progress
-padded_sequences_path = "Outputs/Datasets/Processed/padded_sequences.csv"
+padded_sequences_path = f"Outputs/Datasets/Processed/padded_sequences_{vocab_size}.csv"
 additional_features_normalized_path = "Outputs/Datasets/Processed/additional_features.csv"
 labels_path = "Outputs/Datasets/Processed/labels.csv"
 
@@ -215,62 +205,19 @@ labels_df.to_csv(labels_path)
 
 print("[*] Processed data saved in Outputs/Datasets/Processed/")
 
-# Load precessed datasets
-# padded_sequences = pd.read_csv(padded_sequences_path)
-# additional_features_normalized = pd.read_csv(additional_features_normalized_path)
-# labels = pd.read_csv(labels_path)
-
 # Split datasets for training and testing
 x_train_seq, x_test_seq, x_train_features, x_test_features, y_train, y_test = train_test_split(padded_sequences, additional_features_normalized, labels, test_size=0.2, random_state=42)
 
-print("[*] All done!\n\n [*] Start training...")
-
-class DomainDataset(Dataset):
-    def __init__(self, sequences, features, labels):
-        self.sequences = sequences
-        self.features = features
-        self.labels = labels
-    
-    def __len__(self):
-        return len(self.sequences)
-    
-    def __getitem__(self, idx):
-        return self.sequences[idx], self.features[idx], self.labels[idx]
+print("[*] All done!\n\n[*] Start training...")
 
 train_dataset = DomainDataset(x_train_seq, x_train_features, y_train)
 train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
 
-class FeatureExtrator(torch.nn.Module):
-    def __init__(self, vocab_size, embedding_size, feature_size):
-        super(FeatureExtrator, self).__init__()
-        self.embedding = torch.nn.Embedding(vocab_size, embedding_size)
-        self.gru = torch.nn.GRU(embedding_size, feature_size, batch_first=True)
-    
-    def forward(self, x):
-        embedded_x = self.embedding(x)
-        gru_output, _ = self.gru(embedded_x)
-        features = gru_output[:, -1, :]
-        return features
-
-# Construct the combined model
-class CombinedModel(torch.nn.Module):
-    def __init__(self, vocab_size, embedding_size, feature_size, additional_features_size, num_classes):
-        super(CombinedModel, self).__init__()
-        self.feature_extractor = FeatureExtrator(vocab_size, embedding_size, feature_size)
-        self.fc = torch.nn.Linear(feature_size + additional_features_size, num_classes)
-
-    def forward(self, x, additional_features):
-        extracted_features = self.feature_extractor(x)
-        combined_features = torch.cat((extracted_features, additional_features), dim=1)
-        predictions = self.fc(combined_features)
-        predictions = torch.nn.functional.log_softmax(predictions, dim=1)
-        return predictions
-
 # Create a model instant
 embedding_size = 64
 feature_size = 32
-additional_features_size = len(additional_features_normalized[0])
-num_classes = len(labels_dict) + 1
+additional_features_size = additional_features_normalized.shape[1]
+num_classes = len(labels_dict)
 model = CombinedModel(vocab_size, embedding_size, feature_size, additional_features_size, num_classes)
 
 # Train
@@ -298,8 +245,7 @@ model.eval()
 with torch.no_grad():
     y_pred_probs = model(x_test_seq, torch.FloatTensor(x_test_features))
     predicted_classes = torch.argmax(y_pred_probs, dim=1)
-    predicted_mapped = [labels_dict[i] for i in predicted_classes]
-    classification_report = classification_report(y_test, predicted_mapped, target_names=[labels_dict[i] for i in sorted(labels_dict.keys())])
+    classification_report = classification_report(y_test, predicted_classes, target_names=[labels_dict[i] for i in sorted(labels_dict.keys())])
     print(classification_report)
 
 # Save model
