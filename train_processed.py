@@ -66,7 +66,7 @@ print("[*] Model saved!")
 print("[*] Evaluation")
 model.eval()
 with torch.no_grad():
-    y_pred_probs = model(torch.FloatTensor(x_test_seq), torch.FloatTensor(x_test_features))
+    y_pred_probs = model(torch.tensor(x_test_seq), torch.FloatTensor(x_test_features))
     predicted_classes = torch.argmax(y_pred_probs, dim=1)
     classification_report = classification_report(y_test, predicted_classes, target_names=[labels_dict[i] for i in sorted(labels_dict.keys())])
     print(classification_report)
