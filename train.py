@@ -240,7 +240,7 @@ for epoch in range(num_epochs):
             print(f"Epoch {epoch}, Batch {batch_idx}, Loss: {loss.item():.4f}")
 
 # Save model
-torch.save(model.state_dict(), 'Outputs/Models/combined_model.pth')
+torch.save(model.state_dict(), f'Outputs/Models/combined_model_{vocab_size}_{embedding_size}_{feature_size}_{additional_features_size}_{num_classes}.pth')
 print("[*] Model saved!")
 
 # Evaluation
@@ -253,4 +253,4 @@ with torch.no_grad():
     print(classification_report)
 
     report_df = pd.DataFrame(classification_report).transpose()
-    report_df.to_csv("Outputs/Models/evaluation.csv", index=True)
+    report_df.to_csv(f"Outputs/Models/evaluation_{vocab_size}_{embedding_size}_{feature_size}_{additional_features_size}_{num_classes}.csv", index=True)
