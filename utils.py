@@ -1,5 +1,5 @@
 import torch
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset
 
 class DomainDataset(Dataset):
     def __init__(self, sequences, features, labels):

@@ -123,8 +123,8 @@ for index, row in dataset_df.iterrows():
     unigram_rank_ave, unigram_rank_std, bigram_rank_ave, bigram_rank_std, trigram_rank_ave, trigram_rank_std = feature_generater.cal_ngam_rank_stats(domain, ngram_rank_dict)
     
     markov_domain = '^' + domain + '$'
-    markov_prob_2 = feature_generater.cal_markov_probs(domain, transitions_2, 2)
-    markov_prob_3 = feature_generater.cal_markov_probs(domain, transitions_3, 3)
+    markov_prob_2 = feature_generater.cal_markov_probs(markov_domain, transitions_2, 2)
+    markov_prob_3 = feature_generater.cal_markov_probs(markov_domain, transitions_3, 3)
     
     length_domain = feature_generater.cal_length(domain)
     tld_rank = feature_generater.cal_tld_rank(domain, tld_top_rank_df)
