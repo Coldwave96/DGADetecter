@@ -34,7 +34,7 @@ swapped_labels_dict = dict()
 malicious_dgarchive_file_list = list_files_in_folder(malicious_dgarchive_dir)
 num_dga_domains = 0
 num_dga_files = 0
-max_sample = 100000
+max_sample = 10000
 print(f"Found {len(malicious_dgarchive_file_list)} DGA domain files in total.\n")
 for file in malicious_dgarchive_file_list:
     file_name = file.strip().split('/')[-1]
