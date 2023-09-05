@@ -38,6 +38,32 @@ GRU is used to extract a 32-dimension feature matrix from purely raw char-level 
 **View [here](https://huggingface.co/datasets/c01dsnap/DGADetector-Mixed) for concated datasets.**
 
 ## Go
+### Train
 1. (Optional) Run `python dga_generater.py` for help, if you want to generate dga domains via dga generating algorithms.
 2. Run `python train.py` to start the whole progress based on original datasets in **Datasets** folder, including pre-processing, training and evaluation.
 3. Run `python train_processed.py` to re-train the model based on processed datasets in **Outputs/Datasets/** folder.
+
+### Inference
+* Run `python api.py` to start the API server, and default port is **8000**.
+
+* Send `POST` requests to server nad embed query domains in the following json format.
+```Json
+{
+    "id": 1,
+    "domains": [
+        "google.com",
+        "oqdykzptntg33nzl38f52mxfyoxm49nyorau.ru"
+    ]
+}
+```
+
+* Server will response with corresponding request id and labels.
+```Json
+{
+    "request_id": 1,
+    "labels": [
+        "benign",
+        "murofetweekly"
+    ]
+}
+```
