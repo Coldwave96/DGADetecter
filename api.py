@@ -95,7 +95,7 @@ async def predict(request: Request):
     designed_features_size = designed_features_standardized.shape[1]
     num_classes = len(labels_dict)
     model = CombinedModel(vocab_size, embedding_size, feature_size, designed_features_size, num_classes)
-    model.load_state_dict(torch.load("Outputs/Models/combined_model_59_64_32_19_93.pth"))
+    model.load_state_dict(torch.load("Outputs/Models/combined_model.pth"))
 
     model.eval()
     with torch.no_grad():
