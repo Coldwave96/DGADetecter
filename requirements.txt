@@ -3,3 +3,5 @@ pandas
 tldextract
 torch
 scikit-learn
+uvicorn
+fastapi
