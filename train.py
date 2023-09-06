@@ -251,6 +251,3 @@ with torch.no_grad():
     predicted_classes = torch.argmax(y_pred_probs, dim=1)
     classification_report = classification_report(y_test, predicted_classes, target_names=[labels_dict[i] for i in sorted(labels_dict.keys())])
     print(classification_report)
-
-    report_df = pd.DataFrame(classification_report).transpose()
-    report_df.to_csv(f"Outputs/Models/evaluation_{vocab_size}_{embedding_size}_{feature_size}_{additional_features_size}_{num_classes}.csv", index=True)
