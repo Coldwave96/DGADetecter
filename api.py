@@ -1,6 +1,7 @@
 import json
 import torch
 import uvicorn
+from joblib import load
 from fastapi import FastAPI, Request
 from sklearn.preprocessing import StandardScaler
 
@@ -78,8 +79,8 @@ async def predict(request: Request):
         designed_feature = cal_designed_feature(domain)
         designed_features.append(designed_feature)
 
-    scaler = StandardScaler()
-    designed_features_standardized = scaler.fit_transform(designed_features)
+    scaler = load("Outputs/Datasets/Processed/scaler.joblib")
+    designed_features_standardized = scaler.transform(designed_features)
     designed_features_standardized = torch.FloatTensor(designed_features_standardized)
     
     char_to_index = {char: idx + 1 for idx, char in enumerate(sorted(set(''.join([domain for domain in request_domains]))))}

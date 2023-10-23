@@ -2,11 +2,13 @@ import os
 import json
 import numpy as np
 import pandas as pd
+from joblib import dump
 
 import torch
 from torch.utils.data import DataLoader
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
+from sklearn.preprocessing import StandardScaler
 
 import feature_generater
 from utils import DomainDataset, CombinedModel
@@ -34,7 +36,7 @@ swapped_labels_dict = dict()
 malicious_dgarchive_file_list = list_files_in_folder(malicious_dgarchive_dir)
 num_dga_domains = 0
 num_dga_files = 0
-max_sample = 10000
+max_sample = 1000
 print(f"Found {len(malicious_dgarchive_file_list)} DGA domain files in total.\n")
 for file in malicious_dgarchive_file_list:
     file_name = file.strip().split('/')[-1]
@@ -73,7 +75,7 @@ swapped_labels_dict['benign'] = 0
 labels_dict = {v: k for k, v in swapped_labels_dict.items()}
 benign_domain_df = pd.DataFrame()
 benign_df = pd.read_csv(benign_domain_path, header=None)
-for index, row in benign_df.iterrows():
+for index, row in benign_df.iloc[:10000].iterrows():
     benign_domain = row[1]
     temp_benign = pd.DataFrame(
         {
@@ -170,11 +172,10 @@ print("[*] Dictionary of labels saved in Outputs/Datasets/label_dict.json")
 
 # Normalize all the features since there are no catagorical features
 print("[*] Normalizing numerical human designed features...")
-epsilon = 1e-8
-additional_features_array = np.array(additional_features)
-mean = np.mean(additional_features_array, axis=0)
-std = np.std(additional_features_array, axis=0)
-additional_features_normalized = (additional_features_array - mean) / (std + epsilon)
+scaler = StandardScaler()
+additional_features_normalized = scaler.fit_transform(additional_features)
+
+dump(scaler, "Outputs/Datasets/Processed/scaler.joblib")
 
 print("[*] Processing raw domains...")
 # Create the vectorizer for raw domains

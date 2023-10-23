@@ -14,7 +14,7 @@ padded_sequences_path = "Outputs/Datasets/Processed/padded_sequences_59.csv"
 additional_features_normalized_path = "Outputs/Datasets/Processed/additional_features.csv"
 labels_path = "Outputs/Datasets/Processed/labels.csv"
 
-# Load precessed datasets
+# Load processed datasets
 padded_sequences = pd.read_csv(padded_sequences_path).iloc[:, 1:].to_numpy()
 additional_features_normalized = pd.read_csv(additional_features_normalized_path).iloc[:, 1:].to_numpy()
 labels = pd.read_csv(labels_path)['0'].to_numpy()
