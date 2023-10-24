@@ -55,7 +55,8 @@ for file in malicious_dgarchive_file_list:
             {
                 'domain': dga_domain,
                 'family': dga_family,
-                'label': swapped_labels_dict[dga_family]
+                # 'label': swapped_labels_dict[dga_family]
+                'label': 1 # Binary
             },
             index = [dga_domain_df.shape[0]]
         )
@@ -72,7 +73,10 @@ print(f"[*] Done with all the DGA fmailes, {num_dga_domains} DGA damins in total
 # Load all the benign domain into a Dataframe
 print("[*] Start loading benign datasets...")
 swapped_labels_dict['benign'] = 0
-labels_dict = {v: k for k, v in swapped_labels_dict.items()}
+
+# labels_dict = {v: k for k, v in swapped_labels_dict.items()}
+labels_dict = {"0": "benign", "1": "malicious"} # binary
+
 benign_domain_df = pd.DataFrame()
 benign_df = pd.read_csv(benign_domain_path, header=None)
 for index, row in benign_df.iloc[:10000].iterrows():
@@ -166,16 +170,22 @@ additional_features_df.to_csv("Outputs/Datasets/features_original.csv")
 print("[*] Original features saved in Outputs/Datasets/features_original.csv")
 
 # Save label dict into a local csv file
-with open("Outputs/Datasets/label_dict.json", 'w') as file:
+# with open("Outputs/Datasets/label_dict.json", 'w') as file:
+#     json.dump(labels_dict, file)
+# print("[*] Dictionary of labels saved in Outputs/Datasets/label_dict.json")
+
+# Binary
+with open("Outputs/Datasets/label_dict_binary.json", 'w') as file:
     json.dump(labels_dict, file)
-print("[*] Dictionary of labels saved in Outputs/Datasets/label_dict.json")
+print("[*] Dictionary of labels saved in Outputs/Datasets/label_dict_binary.json")
 
 # Normalize all the features since there are no catagorical features
 print("[*] Normalizing numerical human designed features...")
 scaler = StandardScaler()
 additional_features_normalized = scaler.fit_transform(additional_features)
 
-dump(scaler, "Outputs/Datasets/Processed/scaler.joblib")
+# dump(scaler, "Outputs/Datasets/Processed/scaler.joblib")
+dump(scaler, "Outputs/Datasets/Processed/scaler_binary.joblib") # Binary
 
 print("[*] Processing raw domains...")
 # Create the vectorizer for raw domains

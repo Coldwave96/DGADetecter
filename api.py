@@ -20,7 +20,8 @@ def load_config_files():
     transitions_3 = feature_generater.load_trans_matrix(benign_domain_path, 3)
     tld_top_rank_df = feature_generater.load_tld_rank_file(benign_tld_path)
 
-    with open("Outputs/Datasets/label_dict.json", 'r') as json_file:
+    # with open("Outputs/Datasets/label_dict.json", 'r') as json_file:
+    with open("Outputs/Datasets/label_dict_binary.json", 'r') as json_file: # Binary
         labels_dict = json.load(json_file)
 
 def cal_designed_feature(domain):
@@ -79,7 +80,8 @@ async def predict(request: Request):
         designed_feature = cal_designed_feature(domain)
         designed_features.append(designed_feature)
 
-    scaler = load("Outputs/Datasets/Processed/scaler.joblib")
+    # scaler = load("Outputs/Datasets/Processed/scaler.joblib")
+    scaler = load("Outputs/Datasets/Processed/scaler_binary.joblib")
     designed_features_standardized = scaler.transform(designed_features)
     designed_features_standardized = torch.FloatTensor(designed_features_standardized)
     
@@ -96,7 +98,8 @@ async def predict(request: Request):
     designed_features_size = designed_features_standardized.shape[1]
     num_classes = len(labels_dict)
     model = CombinedModel(vocab_size, embedding_size, feature_size, designed_features_size, num_classes)
-    model.load_state_dict(torch.load("Outputs/Models/combined_model_59_64_32_19_93.pth"))
+    # model.load_state_dict(torch.load("Outputs/Models/combined_model_59_64_32_19_93.pth"))
+    model.load_state_dict(torch.load("Outputs/Models/combined_model_59_64_32_19_2.pth")) # Binary
 
     model.eval()
     with torch.no_grad():
