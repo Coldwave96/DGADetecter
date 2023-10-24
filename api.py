@@ -81,7 +81,7 @@ async def predict(request: Request):
         designed_features.append(designed_feature)
 
     # scaler = load("Outputs/Datasets/Processed/scaler.joblib")
-    scaler = load("Outputs/Datasets/Processed/scaler_binary.joblib")
+    scaler = load("Outputs/Datasets/Processed/scaler_binary.joblib") # Binary
     designed_features_standardized = scaler.transform(designed_features)
     designed_features_standardized = torch.FloatTensor(designed_features_standardized)
     
