@@ -105,13 +105,16 @@ async def predict(request: Request):
     model.eval()
     with torch.no_grad():
         y_pred_probs = model(padded_sequences.clone().detach(), designed_features_standardized.clone().detach())
-        print(y_pred_probs)
-        predicted_classes = torch.argmax(y_pred_probs, dim=1).tolist()
+        predicts = torch.max(torch.round(y_pred_probs * 1000) / 1000, dim=1)
+        predicted_classes = predicts.indices.tolist()
+        predicted_probs = predicts.values.tolist()
+        
         labels_classes = [labels_dict[str(i)] for i in predicted_classes]
     
         response = {
             "request_id": request_id,
-            "labels": labels_classes
+            "labels": labels_classes,
+            "Probs": predicted_probs
         }
     
         return response
