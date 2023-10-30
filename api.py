@@ -100,10 +100,12 @@ async def predict(request: Request):
     model = CombinedModel(vocab_size, embedding_size, feature_size, designed_features_size, num_classes)
     # model.load_state_dict(torch.load("Outputs/Models/combined_model_59_64_32_19_93.pth"))
     model.load_state_dict(torch.load("Outputs/Models/combined_model_59_64_32_19_2.pth")) # Binary
+    # model.load_state_dict(torch.load("Outputs/Models/combined_model.pth")) # Processed
 
     model.eval()
     with torch.no_grad():
         y_pred_probs = model(padded_sequences.clone().detach(), designed_features_standardized.clone().detach())
+        print(y_pred_probs)
         predicted_classes = torch.argmax(y_pred_probs, dim=1).tolist()
         labels_classes = [labels_dict[str(i)] for i in predicted_classes]
     

@@ -36,5 +36,6 @@ class CombinedModel(torch.nn.Module):
         extracted_features = self.feature_extractor(x)
         combined_features = torch.cat((extracted_features, additional_features), dim=1)
         predictions = self.fc(combined_features)
-        predictions = torch.nn.functional.log_softmax(predictions, dim=1)
+        # predictions = torch.nn.functional.log_softmax(predictions, dim=1)
+        predictions = torch.sigmoid(predictions) # Binary
         return predictions

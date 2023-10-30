@@ -20,7 +20,8 @@ additional_features_normalized = pd.read_csv(additional_features_normalized_path
 labels = pd.read_csv(labels_path)['0'].to_numpy()
 
 # Load label dict from local files
-with open("Outputs/Datasets/label_dict.json", 'r') as json_file:
+# with open("Outputs/Datasets/label_dict.json", 'r') as json_file:
+with open("Outputs/Datasets/label_dict_binary.json", 'r') as json_file: # Binary
     labels_dict = json.load(json_file)
 
 # Split datasets for training and testing
