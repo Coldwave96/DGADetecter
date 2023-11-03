@@ -57,13 +57,17 @@ GRU is used to extract a 32-dimension feature matrix from purely raw char-level 
 }
 ```
 
-* Server will response with corresponding request id and labels.
+* Server will response with corresponding request id, labels and probs.
 ```Json
 {
     "request_id": 1,
     "labels": [
         "benign",
-        "murofetweekly"
+        "malicious"
+    ],
+    "Probs": [
+        1.0,
+        1.0
     ]
 }
 ```
