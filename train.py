@@ -79,7 +79,8 @@ labels_dict = {"0": "benign", "1": "malicious"} # binary
 
 benign_domain_df = pd.DataFrame()
 benign_df = pd.read_csv(benign_domain_path, header=None)
-for index, row in benign_df.iloc[:10000].iterrows():
+num_benign = 70000
+for index, row in benign_df.iloc[:num_benign].iterrows():
     benign_domain = row[1]
     temp_benign = pd.DataFrame(
         {
@@ -251,7 +252,7 @@ for epoch in range(num_epochs):
             print(f"Epoch {epoch}, Batch {batch_idx}, Loss: {loss.item():.4f}")
 
 # Save model
-torch.save(model.state_dict(), f'Outputs/Models/combined_model_{vocab_size}_{embedding_size}_{feature_size}_{additional_features_size}_{num_classes}.pth')
+torch.save(model.state_dict(), f'Outputs/Models/combined_model_vocabSize{vocab_size}_embeddingSize{embedding_size}_featureSize{feature_size}_additionalFeaturesSize{additional_features_size}_numClasses{num_classes}_malicious{num_dga_domains}_benign{num_benign}.pth')
 print("[*] Model saved!")
 
 # Evaluation
